@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 محاكي الثروة</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0a0a15; color: #e0e0f0; min-height: 100vh; display: flex; justify-content: center; background-image: radial-gradient(circle at 20% 0%, #1a1a3e 0%, transparent 50%), radial-gradient(circle at 80% 100%, #2a0a3e 0%, transparent 50%); }
+  #app { width: 100%; max-width: 520px; padding: 12px 12px 90px; position: relative; }
+  .card { background: linear-gradient(135deg, rgba(30,30,60,0.9), rgba(20,20,40,0.9)); border: 1px solid rgba(0,255,255,0.15); border-radius: 16px; padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .card h3 { color: #00e5ff; font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .header { background: linear-gradient(135deg, #1a1a4e, #2a1a4e); border: 1px solid rgba(180,100,255,0.3); border-radius: 16px; padding: 14px; margin-bottom: 12px; position: relative; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .stat { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 8px 10px; border: 1px solid rgba(0,255,255,0.1); }
+  .stat-label { font-size: 10px; color: #8888aa; text-transform: uppercase; }
+  .stat-value { font-size: 15px; font-weight: bold; color: #00e5ff; margin-top: 2px; }
+  .stat-value.gold { color: #ffd700; }
+  .stat-value.green { color: #00ff88; }
+  .stat-value.purple { color: #bb66ff; }
+  .xp-bar-bg { background: rgba(0,0,0,0.5); height: 10px; border-radius: 5px; overflow: hidden; margin-top: 6px; border: 1px solid rgba(180,100,255,0.2); }
+  .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #00e5ff, #bb66ff); transition: width 0.4s; box-shadow: 0 0 10px rgba(187,102,255,0.5); }
+  button { font-family: inherit; cursor: pointer; border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: bold; transition: transform 0.1s, box-shadow 0.2s; color: white; background: linear-gradient(135deg, #0088aa, #00e5ff); box-shadow: 0 3px 10px rgba(0,229,255,0.3); }
+  button:active:not(:disabled) { transform: scale(0.96); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.6); }
+  button.purple { background: linear-gradient(135deg, #7722cc, #bb66ff); box-shadow: 0 3px 10px rgba(187,102,255,0.3); }
+  button.gold { background: linear-gradient(135deg, #aa8800, #ffd700); color: #1a1a1a; box-shadow: 0 3px 10px rgba(255,215,0,0.3); }
+  button.danger { background: linear-gradient(135deg, #aa2222, #ff4444); }
+  button.full { width: 100%; }
+  input, select { background: rgba(0,0,0,0.4); border: 1px solid rgba(0,255,255,0.2); color: #e0e0f0; padding: 8px 10px; border-radius: 8px; font-size: 13px; font-family: inherit; width: 100%; }
+  input:focus, select:focus { outline: none; border-color: #00e5ff; }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .row > * { flex: 1; }
+  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(0,0,0,0.25); border-radius: 8px; margin-bottom: 6px; font-size: 12px; }
+  .list-item small { color: #8888aa; display: block; font-size: 10px; margin-top: 2px; }
+  .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; background: linear-gradient(180deg, rgba(15,15,30,0.98), rgba(10,10,20,0.98)); border-top: 1px solid rgba(0,255,255,0.2); display: grid; grid-template-columns: repeat(7, 1fr); padding: 6px 4px; z-index: 100; backdrop-filter: blur(10px); }
+  .nav button { background: transparent; box-shadow: none; padding: 6px 2px; font-size: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: #6666aa; border-radius: 8px; }
+  .nav button .ico { font-size: 18px; }
+  .nav button.active { color: #00e5ff; background: rgba(0,229,255,0.1); }
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: linear-gradient(135deg, #1a1a4e, #2a1a4e); border: 1px solid #00e5ff; color: #e0e0f0; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: bold; z-index: 999; transition: transform 0.3s; box-shadow: 0 5px 25px rgba(0,229,255,0.4); max-width: 90%; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: #00ff88; box-shadow: 0 5px 25px rgba(0,255,136,0.4); }
+  .toast.error { border-color: #ff4444; box-shadow: 0 5px 25px rgba(255,68,68,0.4); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .job-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,255,255,0.15); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+  .job-card.locked { opacity: 0.5; }
+  .job-card.current { border-color: #bb66ff; box-shadow: 0 0 15px rgba(187,102,255,0.3); }
+  .cooldown-bar { height: 4px; background: rgba(0,0,0,0.5); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .cooldown-fill { height: 100%; background: linear-gradient(90deg, #00e5ff, #bb66ff); width: 0%; transition: width 0.1s linear; }
+  .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .game-btn { padding: 14px; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .game-btn .ico { font-size: 24px; }
+  .result-display { text-align: center; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 10px; margin: 8px 0; font-size: 14px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+  .log-item { font-size: 11px; padding: 5px 8px; border-right: 2px solid #00e5ff; margin-bottom: 4px; background: rgba(0,0,0,0.2); border-radius: 4px; }
+  .empty { text-align: center; color: #555577; font-size: 12px; padding: 20px; }
+  .badge { display: inline-block; padding: 2px 6px; background: rgba(0,229,255,0.2); border-radius: 4px; font-size: 10px; color: #00e5ff; margin-right: 4px; }
+  .slot-reels { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
+  .reel { width: 50px; height: 60px; background: rgba(0,0,0,0.5); border: 2px solid #00e5ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .progress-mini { height: 3px; background: rgba(0,0,0,0.5); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+  .progress-mini > div { height: 100%; background: #ffd700; transition: width 0.3s; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">💰 السيولة</div><div class="stat-value" id="cash">$1,000</div></div>
+      <div class="stat"><div class="stat-label">🏦 البنك</div><div class="stat-value green" id="bank">$0</div></div>
+      <div class="stat"><div class="stat-label">📊 صافي الثروة</div><div class="stat-value purple" id="netWorth">$1,000</div></div>
+      <div class="stat"><div class="stat-label">🏆 المستوى</div><div class="stat-value gold" id="level">1</div></div>
+    </div>
+    <div style="font-size:11px; color:#8888aa; display:flex; justify-content:space-between;">
+      <span>XP: <span id="xpText">0/100</span></span>
+      <span id="jobText">عاطل</span>
+    </div>
+    <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBar" style="width:0%"></div></div>
+  </div>
+
+  <div class="tab-content active" id="tab-home">
+    <div class="card">
+      <h3>💼 وظيفتك الحالية</h3>
+      <div class="list-item">
+        <div>
+          <strong id="currentJobName">عاطل عن العمل</strong>
+          <small id="currentJobPay">ابدأ بالوظائف من التبويب 💼</small>
+        </div>
+      </div>
+      <div class="row">
+        <button id="workBtn">⚡ عمل عادي</button>
+        <button id="workExtraBtn" class="purple">🔥 عمل إضافي</button>
+      </div>
+      <div class="cooldown-bar"><div class="cooldown-fill" id="workCd"></div></div>
+      <div class="cooldown-bar" style="margin-top:4px;"><div class="cooldown-fill" id="extraCd" style="background:linear-gradient(90deg,#bb66ff,#ff44aa)"></div></div>
+    </div>
+
+    <div class="card">
+      <h3>🎯 المهمات</h3>
+      <div id="missionsList"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-jobs">
+    <div class="card">
+      <h3>💼 نظام الوظائف (13 وظيفة)</h3>
+      <div id="jobsList"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-bank">
+    <div class="card">
+      <h3>💵 إيداع في البنك</h3>
+      <div class="row">
+        <input type="number" id="depositAmount" placeholder="المبلغ" value="100">
+        <button id="depositBtn">إيداع</button>
+      </div>
+      <small style="color:#8888aa; font-size:10px;">المدة: 10 دقائق | الفائدة: 5%</small>
+      <div id="depositsList" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>💳 القروض</h3>
+      <div class="row">
+        <input type="number" id="loanAmount" placeholder="مبلغ القرض" value="500">
+        <button id="loanBtn" class="gold">اقتراض</button>
+      </div>
+      <div id="loansList" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>📄 كشف الحساب</h3>
+      <div id="bankStatement"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-invest">
+    <div class="card">
+      <h3>🪙 الذهب</h3>
+      <div class="list-item">
+        <div>سعر الجرام<small id="goldTrend">📈 صاعد</small></div>
+        <div class="stat-value gold" id="goldPrice">$50</div>
+      </div>
+      <div class="list-item">
+        <div>مخزونك<small id="goldValue">القيمة: $0</small></div>
+        <div class="stat-value gold" id="goldHeld">0 جم</div>
+      </div>
+      <div class="row">
+        <input type="number" id="goldBuyQty" placeholder="عدد الجرامات" value="1">
+        <button id="buyGoldBtn" class="gold">شراء</button>
+        <button id="sellGoldBtn" class="danger">بيع الكل</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📈 البورصة</h3>
+      <div id="stocksList"></div>
+    </div>
+
+    <div class="card">
+      <h3>💼 المحفظة</h3>
+      <div id="portfolioList"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-assets">
+    <div class="card">
+      <h3>🏢 الأعمال التجارية</h3>
+      <div id="businessList"></div>
+    </div>
+    <div class="card">
+      <h3>🏠 العقارات</h3>
+      <div id="realEstateList"></div>
+    </div>
+    <div class="card">
+      <h3>🏘️ ممتلكاتك</h3>
+      <div id="ownedAssets"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-games">
+    <div class="card">
+      <h3>🎰 الألعاب</h3>
+      <div class="row">
+        <input type="number" id="betAmount" placeholder="مبلغ الرهان" value="50">
+      </div>
+      <div class="games-grid">
+        <button class="game-btn purple" onclick="playSlots()"><span class="ico">🎰</span>سلوتس</button>
+        <button class="game-btn purple" onclick="playPlane()"><span class="ico">✈️</span>الطيارة</button>
+        <button class="game-btn purple" onclick="playShapes()"><span class="ico">🔷</span>الأشكال</button>
+        <button class="game-btn purple" onclick="playWheel()"><span class="ico">🎡</span>عجلة الحظ</button>
+        <button class="game-btn purple" onclick="playRPS()"><span class="ico">✊</span>حجر ورق مقص</button>
+      </div>
+      <div class="result-display" id="gameResult">اختر لعبة للعب</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-social">
+    <div class="card">
+      <h3>💸 تحويل أموال</h3>
+      <input id="transferee" placeholder="اسم المستخدم" style="margin-bottom:8px;">
+      <input type="number" id="transferAmount" placeholder="المبلغ (الحد الأدنى 10$)" value="100" style="margin-bottom:8px;">
+      <div style="font-size:11px;color:#ffaa00;margin-bottom:8px;">⚠️ عمولة التحويل: 5%</div>
+      <button class="full gold" onclick="doTransfer()">📤 إرسال</button>
+    </div>
+    <div class="card">
+      <h3>📜 سجل تحويلاتك</h3>
+      <div id="transferHistory"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-board">
+    <div class="card">
+      <h3>🏆 لوحة المتصدرين</h3>
+      <div id="myRankBox" style="margin-bottom:12px;"></div>
+      <div id="leaderboardList"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-stats">
+    <div class="card">
+      <h3>📊 الإحصائيات</h3>
+      <div id="statsList"></div>
+    </div>
+    <div class="card">
+      <h3>📜 سجل العمليات</h3>
+      <div id="logList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" data-tab="home"><span class="ico">🏠</span>الرئيسية</button>
+  <button data-tab="jobs"><span class="ico">💼</span>وظائف</button>
+  <button data-tab="bank"><span class="ico">🏦</span>بنك</button>
+  <button data-tab="invest"><span class="ico">📈</span>استثمار</button>
+  <button data-tab="assets"><span class="ico">🏢</span>أعمال</button>
+  <button data-tab="games"><span class="ico">🎰</span>ألعاب</button>
+  <button data-tab="social"><span class="ico">🤝</span>اجتماعي</button>
+  <button data-tab="board"><span class="ico">🏆</span>متصدرين</button>
+  <button data-tab="stats"><span class="ico">📊</span>إحصائيات</button>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
