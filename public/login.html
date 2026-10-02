@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تسجيل الدخول</title>
+<style>
+  body{margin:0;font-family:Tahoma;background:#0a0a15;color:#e0e0f0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background-image:radial-gradient(circle at 20% 0%,#1a1a3e,transparent 50%),radial-gradient(circle at 80% 100%,#2a0a3e,transparent 50%);}
+  .box{width:100%;max-width:400px;background:linear-gradient(135deg,rgba(30,30,60,.95),rgba(20,20,40,.95));
+       border:1px solid rgba(0,255,255,.2);border-radius:20px;padding:28px;box-shadow:0 10px 40px rgba(0,0,0,.6);margin:16px;}
+  h1{text-align:center;color:#00e5ff;font-size:24px;margin:0 0 6px;}
+  p{text-align:center;color:#8888aa;font-size:12px;margin:0 0 20px;}
+  input{width:100%;padding:12px;margin-bottom:10px;background:rgba(0,0,0,.4);border:1px solid rgba(0,255,255,.2);
+        border-radius:10px;color:#e0e0f0;font-size:14px;font-family:inherit;box-sizing:border-box;}
+  input:focus{outline:none;border-color:#00e5ff;}
+  button{width:100%;padding:12px;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;
+         background:linear-gradient(135deg,#0088aa,#00e5ff);color:white;margin-bottom:8px;}
+  button.purple{background:linear-gradient(135deg,#7722cc,#bb66ff);}
+  .tabs{display:flex;margin-bottom:16px;background:rgba(0,0,0,.3);border-radius:10px;padding:4px;}
+  .tabs button{margin:0;background:transparent;color:#8888aa;font-size:13px;padding:8px;}
+  .tabs button.active{background:rgba(0,229,255,.2);color:#00e5ff;}
+  .msg{text-align:center;font-size:13px;margin-top:10px;min-height:18px;}
+  .err{color:#ff5555;} .ok{color:#00ff88;}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>💰 محاكي الثروة</h1>
+  <p>سجّل دخولك لتبدأ رحلتك</p>
+  <div class="tabs">
+    <button id="tabLogin" class="active" onclick="switchTab('login')">دخول</button>
+    <button id="tabReg" onclick="switchTab('reg')">حساب جديد</button>
+  </div>
+  <input id="username" placeholder="اسم المستخدم" autocomplete="username">
+  <input id="password" type="password" placeholder="كلمة السر" autocomplete="current-password">
+  <button id="actionBtn" onclick="submit()">تسجيل الدخول</button>
+  <div class="msg" id="msg"></div>
+</div>
+<script>
+let mode = 'login';
+function switchTab(m) {
+  mode = m;
+  document.getElementById('tabLogin').classList.toggle('active', m==='login');
+  document.getElementById('tabReg').classList.toggle('active', m==='reg');
+  document.getElementById('actionBtn').textContent = m==='login' ? 'تسجيل الدخول' : 'إنشاء حساب';
+  document.getElementById('msg').textContent = '';
+}
+async function submit() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const msg = document.getElementById('msg');
+  if (!username || !password) { msg.className='msg err'; msg.textContent='أدخل البيانات'; return; }
+  try {
+    const r = await fetch('/api/' + (mode==='login'?'login':'register'), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    const data = await r.json();
+    if (!r.ok) { msg.className='msg err'; msg.textContent=data.error; return; }
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('username', data.username);
+    msg.className='msg ok'; msg.textContent='✅ جاري التحميل...';
+    setTimeout(()=>location.href='/', 500);
+  } catch(e) { msg.className='msg err'; msg.textContent='خطأ في الاتصال'; }
+}
+document.getElementById('password').addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+</script>
+</body>
+    </html>
