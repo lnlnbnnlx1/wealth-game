@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة الأدمن 👑</title>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Tahoma;background:#0a0a15;color:#e0e0f0;padding:12px;background-image:radial-gradient(circle at 20% 0%,#1a1a3e,transparent 50%);}
+  .wrap{max-width:800px;margin:0 auto;}
+  h1{color:#ffd700;text-align:center;font-size:22px;}
+  .card{background:linear-gradient(135deg,rgba(30,30,60,.95),rgba(20,20,40,.95));border:1px solid rgba(255,215,0,.2);border-radius:16px;padding:14px;margin-bottom:12px;}
+  h3{color:#00e5ff;margin:0 0 10px;font-size:15px;}
+  input,select{width:100%;padding:8px;background:rgba(0,0,0,.4);border:1px solid rgba(0,255,255,.2);border-radius:8px;color:#e0e0f0;margin-bottom:6px;font-family:inherit;font-size:13px;}
+  button{padding:8px 12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;background:linear-gradient(135deg,#0088aa,#00e5ff);color:white;font-size:12px;margin:2px;}
+  button.gold{background:linear-gradient(135deg,#aa8800,#ffd700);color:#1a1a1a;}
+  button.danger{background:linear-gradient(135deg,#aa2222,#ff4444);}
+  button.purple{background:linear-gradient(135deg,#7722cc,#bb66ff);}
+  .row{display:flex;gap:6px;} .row>*{flex:1;}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+  th,td{padding:6px;text-align:right;border-bottom:1px solid rgba(255,255,255,.1);}
+  th{color:#8888aa;font-size:10px;}
+  .ban{color:#ff4444;font-weight:bold;}
+  .user-row:hover{background:rgba(0,229,255,.05);}
+  .tab-btns{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .tab-btns button{background:rgba(0,229,255,.1);}
+  .tab-btns button.active{background:linear-gradient(135deg,#0088aa,#00e5ff);}
+  .msg{text-align:center;padding:8px;margin-top:8px;border-radius:8px;font-size:12px;}
+  .msg.ok{background:rgba(0,255,136,.15);color:#00ff88;}
+  .msg.err{background:rgba(255,68,68,.15);color:#ff4444;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>👑 لوحة التحكم</h1>
+  <div class="tab-btns">
+    <button class="active" onclick="showTab('users', this)">👥 المستخدمين</button>
+    <button onclick="showTab('give', this)">💰 إعطاء</button>
+    <button onclick="showTab('gifts', this)">🎁 أكواد الهدايا</button>
+    <button onclick="showTab('transfers', this)">💸 التحويلات</button>
+    <button onclick="showTab('logs', this)">📜 السجلات</button>
+    <button onclick="location.href='/'">🏠 اللعبة</button>
+    <button class="danger" onclick="logout()">🚪 خروج</button>
+  </div>
+
+  <div id="tab-users" class="card">
+    <h3>👥 المستخدمين</h3>
+    <input id="search" placeholder="🔍 ابحث..." oninput="renderUsers()">
+    <div id="usersList"></div>
+  </div>
+
+  <div id="tab-give" class="card" style="display:none;">
+    <h3>💰 إعطاء أموال / XP / ذهب</h3>
+    <input id="giveUser" placeholder="اسم المستخدم">
+    <div class="row">
+      <input id="giveCash" type="number" placeholder="💰 فلوس" value="0">
+      <input id="giveXP" type="number" placeholder="⭐ XP" value="0">
+      <input id="giveGold" type="number" placeholder="🪙 ذهب" value="0">
+    </div>
+    <input id="giveReason" placeholder="السبب (اختياري)">
+    <button class="gold" onclick="doGive()">✅ إرسال</button>
+    <div id="giveMsg"></div>
+  </div>
+
+  <div id="tab-gifts" class="card" style="display:none;">
+    <h3>🎁 إنشاء كود هدية</h3>
+    <div class="row">
+      <input id="giftCash" type="number" placeholder="💰 فلوس" value="100">
+      <input id="giftXP" type="number" placeholder="⭐ XP" value="0">
+      <input id="giftGold" type="number" placeholder="🪙 ذهب" value="0">
+    </div>
+    <div class="row">
+      <input id="giftCode" placeholder="الكود (اتركه فارغ عشوائي)">
+      <input id="giftUses" type="number" placeholder="عدد الاستخدامات" value="10">
+      <input id="giftHours" type="number" placeholder="ينتهي بعد (ساعة)" value="24">
+    </div>
+    <button class="purple" onclick="createGift()">🎁 إنشاء</button>
+    <div id="giftMsg"></div>
+    <h3 style="margin-top:16px;">📋 الأكواد الحالية</h3>
+    <div id="giftsList"></div>
+  </div>
+
+  <div id="tab-transfers" class="card" style="display:none;">
+    <h3>💸 سجل التحويلات</h3>
+    <button onclick="loadTransfers()">🔄 تحديث</button>
+    <div id="transfersList" style="margin-top:10px;"></div>
+  </div>
+
+  <div id="tab-logs" class="card" style="display:none;">
+    <h3>📜 سجل العمليات</h3>
+    <button onclick="loadLogs()">🔄 تحديث</button>
+    <div id="logsList" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('token');
+if (!TOKEN) location.href = '/login.html';
+
+async function api(path, method='GET', body=null) {
+  const opt = { method, headers: { 'Authorization': 'Bearer ' + TOKEN } };
+  if (body) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  const r = await fetch('/api' + path, opt);
+  if (r.status === 401) { localStorage.clear(); location.href='/login.html'; return {}; }
+  if (r.status === 403) { const d = await r.json(); alert(d.error || 'غير مصرح'); return {}; }
+  return r.json();
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+  document.querySelectorAll('.tab-btns button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  if (btn) btn.classList.add('active');
+  if (name === 'users') loadUsers();
+  if (name === 'gifts') loadGifts();
+  if (name === 'logs') loadLogs();
+  if (name === 'transfers') loadTransfers();
+}
+
+let allUsers = [];
+async function loadUsers() {
+  allUsers = await api('/admin/users');
+  renderUsers();
+}
+function renderUsers() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const list = allUsers.filter(u => u.username.toLowerCase().includes(q));
+  document.getElementById('usersList').innerHTML = `
+    <table><thead><tr>
+      <th>المستخدم</th><th>💰</th><th>🏦</th><th>🏆</th><th>🪙</th><th>الحالة</th><th>إجراءات</th>
+    </tr></thead><tbody>
+      ${list.map(u => `<tr class="user-row">
+        <td><strong>${u.username}</strong>${u.is_admin?' 👑':''}<br><small style="color:#666;font-size:9px;">${u.is_banned?'<span class="ban">محظور: '+(u.ban_reason||'')+'</span>':''}</small></td>
+        <td>$${Math.floor(u.cash)}</td>
+        <td>$${Math.floor(u.bank)}</td>
+        <td>${u.level}</td>
+        <td>${Math.floor(u.gold)}</td>
+        <td>${u.is_banned?'<span class="ban">🚫</span>':'✅'}</td>
+        <td>
+          ${u.is_admin?'':`
+            <button onclick="banUser('${u.username}', ${u.is_banned?0:1})">${u.is_banned?'فك':'حظر'}</button>
+            <button class="danger" onclick="delUser('${u.username}')">حذف</button>
+          `}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function doGive() {
+  const data = {
+    username: document.getElementById('giveUser').value.trim(),
+    cash: +document.getElementById('giveCash').value || 0,
+    xp: +document.getElementById('giveXP').value || 0,
+    gold: +document.getElementById('giveGold').value || 0,
+    reason: document.getElementById('giveReason').value.trim()
+  };
+  if (!data.username) { alert('أدخل اسم المستخدم'); return; }
+  const r = await api('/admin/give', 'POST', data);
+  const msg = document.getElementById('giveMsg');
+  if (r.error) { msg.className='msg err'; msg.textContent = '❌ ' + r.error; }
+  else { msg.className='msg ok'; msg.textContent = '✅ تم الإرسال'; loadUsers(); }
+}
+
+async function banUser(username, banned) {
+  const reason = banned ? prompt('سبب الحظر:') : '';
+  if (banned && reason === null) return;
+  await api('/admin/ban', 'POST', { username, banned, reason });
+  loadUsers();
+}
+
+async function delUser(username) {
+  if (!confirm('حذف ' + username + ' نهائياً؟')) return;
+  await api('/admin/user/' + username, 'DELETE');
+  loadUsers();
+}
+
+async function createGift() {
+  const data = {
+    code: document.getElementById('giftCode').value.trim().toUpperCase() || null,
+    cash: +document.getElementById('giftCash').value || 0,
+    xp: +document.getElementById('giftXP').value || 0,
+    gold: +document.getElementById('giftGold').value || 0,
+    max_uses: +document.getElementById('giftUses').value || 1,
+    expires_in_hours: +document.getElementById('giftHours').value || 0
+  };
+  const r = await api('/admin/gift/create', 'POST', data);
+  const msg = document.getElementById('giftMsg');
+  if (r.error) { msg.className='msg err'; msg.textContent = '❌ ' + r.error; }
+  else { msg.className='msg ok'; msg.innerHTML = '✅ تم إنشاء الكود: <b style="color:#ffd700;">' + r.code + '</b>'; loadGifts(); }
+}
+
+async function loadGifts() {
+  const list = await api('/admin/gift/list');
+  if (!Array.isArray(list)) return;
+  document.getElementById('giftsList').innerHTML = list.length ? `
+    <table><thead><tr><th>الكود</th><th>💰</th><th>⭐</th><th>🪙</th><th>استخدام</th><th>ينتهي</th><th></th></tr></thead><tbody>
+    ${list.map(g => `<tr>
+      <td><strong style="color:#ffd700;cursor:pointer;" onclick="navigator.clipboard.writeText('${g.code}')">${g.code}</strong></td>
+      <td>${g.cash}</td><td>${g.xp}</td><td>${g.gold}</td>
+      <td>${g.uses}/${g.max_uses}</td>
+      <td>${g.expires_at ? new Date(g.expires_at).toLocaleDateString('ar-EG') : '∞'}</td>
+      <td><button class="danger" onclick="delGift('${g.code}')">🗑</button></td>
+    </tr>`).join('')}</tbody></table>` : '<div style="text-align:center;color:#666;">لا توجد أكواد</div>';
+}
+
+async function delGift(code) {
+  if (!confirm('حذف الكود ' + code + '؟')) return;
+  await api('/admin/gift/' + code, 'DELETE');
+  loadGifts();
+}
+
+async function loadLogs() {
+  const list = await api('/admin/logs');
+  if (!Array.isArray(list)) return;
+  document.getElementById('logsList').innerHTML = list.map(l => `
+    <div style="padding:6px;border-right:2px solid #00e5ff;background:rgba(0,0,0,.2);border-radius:4px;margin-bottom:4px;font-size:11px;">
+      <span style="color:#666;">${new Date(l.at).toLocaleString('ar-EG')}</span> - 
+      <b style="color:#00e5ff;">${l.username}</b> 
+      <span style="color:#bb66ff;">[${l.action}]</span> ${l.details||''}
+    </div>`).join('');
+}
+
+async function loadTransfers() {
+  const list = await api('/admin/transfers');
+  if (!Array.isArray(list)) return;
+  document.getElementById('transfersList').innerHTML = list.length ? `
+    <table><thead><tr>
+      <th>من</th><th>إلى</th><th>المبلغ</th><th>عمولة</th><th>التاريخ</th>
+    </tr></thead><tbody>
+    ${list.map(t => `<tr>
+      <td>${t.from_username}</td>
+      <td>${t.to_username}</td>
+      <td style="color:#00ff88;">$${t.amount}</td>
+      <td style="color:#ffaa00;">$${t.fee}</td>
+      <td style="font-size:10px;">${new Date(t.at).toLocaleString('ar-EG')}</td>
+    </tr>`).join('')}
+    </tbody></table>` : '<div style="text-align:center;color:#666;">لا توجد تحويلات</div>';
+}
+
+function logout() {
+  localStorage.clear();
+  location.href = '/login.html';
+}
+
+loadUsers();
+</script>
+</body>
+</html>
